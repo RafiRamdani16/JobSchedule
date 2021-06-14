@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">JobScheduler</string>
+    <string name="nework_type_required">Nework Type Required</string>
+    <string name="none">none</string>
+    <string name="any">any</string>
+    <string name="wifi">wifi</string>
+    <string name="cancel_job">Cancel Job</string>
+    <string name="schedule_job">Schedule Job</string>
+</resources>
