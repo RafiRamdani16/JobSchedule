@@ -8,21 +8,29 @@ import android.app.job.JobService;
 import android.content.Intent;
 import android.graphics.Color;
 
+import android.os.Looper;
+
 import androidx.core.app.NotificationCompat;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import android.os.Handler;
+import android.util.Log;
+import android.widget.Toast;
 
 
 public class NotificationJobService extends JobService {
 
     NotificationManager mNotifyManager;
-
+    private ExecutorService executorService;
     // Notification channel ID.
     private static final String PRIMARY_CHANNEL_ID =
             "primary_notification_channel";
     public void createNotificationChannel() {
 
         // Define notification manager object.
-        mNotifyManager =
-                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        mNotifyManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
         // Notification channels are only available in OREO and higher.
         // So, add a check on SDK version.
@@ -46,28 +54,51 @@ public class NotificationJobService extends JobService {
     }
     @Override
     public boolean onStartJob(JobParameters params) {
-        /**
-         * Creates a Notification channel, for OREO and higher.
-         */
-        //Create the notification channel
-        createNotificationChannel();
-        //Set up the notification content intent to launch the app when clicked
-        PendingIntent contentPendingIntent = PendingIntent.getActivity
-                (this, 0, new Intent(this, MainActivity.class), PendingIntent.FLAG_UPDATE_CURRENT);
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this,PRIMARY_CHANNEL_ID)
-                .setContentTitle("Job Service")
-                .setContentText("Your Job is running")
-                .setContentIntent(contentPendingIntent)
-                .setSmallIcon(R.drawable.ic_job_running)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setDefaults(NotificationCompat.DEFAULT_ALL)
-                .setAutoCancel(true);
-        mNotifyManager.notify(0, builder.build());
-        return false;
-    }
+        Handler handler = new Handler(Looper.getMainLooper());
+        executorService = Executors.newFixedThreadPool(1);
+        executorService.submit(() -> {
+            boolean jobFinished = true;
+            try {
+                Thread.sleep(5000);
+            } catch (Exception e) {
+                Log.d("Thread", "Thread destroyed");
+                jobFinished = false;
+            }
+            boolean finalJobFinished = jobFinished;
+            handler.post(() -> {
+                if (finalJobFinished) {
+                    createNotificationChannel();
 
+                    PendingIntent contentPendingIntent = PendingIntent.getActivity(
+                            getApplicationContext(),
+                            0,
+                            new Intent(this, MainActivity.class),
+                            PendingIntent.FLAG_UPDATE_CURRENT
+                    );
+
+                    NotificationCompat.Builder builder = new NotificationCompat.Builder(this, PRIMARY_CHANNEL_ID)
+                            .setContentTitle("Job Service")
+                            .setContentText("Your Job is running")
+                            .setContentIntent(contentPendingIntent)
+                            .setSmallIcon(R.drawable.ic_job_running)
+                            .setPriority(NotificationCompat.PRIORITY_HIGH)
+                            .setDefaults(NotificationCompat.DEFAULT_ALL)
+                            .setAutoCancel(true);
+                    mNotifyManager.notify(0, builder.build());
+                    Toast.makeText(getApplicationContext(), "Job Complete", Toast.LENGTH_SHORT)
+                            .show();
+                }
+                jobFinished(params, !finalJobFinished);
+            });
+        });
+        return true;
+    }
     @Override
     public boolean onStopJob(JobParameters params) {
+        if (executorService != null) {
+            executorService.shutdownNow();
+        }
+        Toast.makeText(getApplicationContext(), "Job Failed", Toast.LENGTH_SHORT).show();
         return true;
     }
 }

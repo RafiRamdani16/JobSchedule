@@ -94,10 +94,8 @@ public class MainActivity extends AppCompatActivity {
                     Toast.LENGTH_SHORT).show();
         }
 
-
-
-        Toast.makeText(this, "Job Scheduled, job will run when " +
-                "the constraints are met.", Toast.LENGTH_SHORT).show();
+//        Toast.makeText(this, "Job Scheduled, job will run when " +
+//                "the constraints are met.", Toast.LENGTH_SHORT).show();
     }
 
 
